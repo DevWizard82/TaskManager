@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">
+                    {% if form.instance.pk %}
+                    <i class="fas fa-edit"></i> Modifier la Tâche
+                    {% else %}
+                    <i class="fas fa-plus-circle"></i> Nouvelle Tâche
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+                        {{ field.errors }}
+                        <!-- Utilisation des classes Bootstrap pour les champs générés par Django -->
+                        {% if field.name == 'description' %}
+                        <textarea name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control"
+                            rows="4">{{ field.value|default_if_none:'' }}</textarea>
+                        {% else %}
+                        <!-- Il est souvent préférable d'utiliser django-crispy-forms, mais pour la simplicité, 
+                                 nous ajoutons la classe via un petit hack ou nous nous fions au rendu de base, 
+                                 ou utilisons simplement field.as_widget. Ici nous affichons le champ natif -->
+                        <div class="form-control-wrapper">
+                            {{ field }}
+                        </div>
+
+                        {% endif %}
+
+                        {% if field.help_text %}
+                        <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'task_list' %}" class="btn btn-secondary me-md-2">Annuler</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Ajout de la classe form-control (ou form-select) de Bootstrap à tous les champs du formulaire
+    document.addEventListener("DOMContentLoaded", function () {
+        var inputs = document.querySelectorAll('.form-control-wrapper input, .form-control-wrapper select, .form-control-wrapper textarea');
+        inputs.forEach(function (input) {
+            if (input.tagName === 'SELECT') {
+                input.classList.add('form-select');
+            } else if (input.type !== 'checkbox' && input.type !== 'radio') {
+                input.classList.add('form-control');
+            }
+        });
+    });
+</script>
+{% endblock %}
