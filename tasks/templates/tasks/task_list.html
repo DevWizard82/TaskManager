@@ -1,21 +1,21 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-6">
-        <h2><i class="fas fa-tasks"></i> Mes Tâches</h2>
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <h2 class="page-title">Mes tâches</h2>
     </div>
-    <div class="col-md-6 text-end">
-        <a href="{% url 'task_create' %}" class="btn btn-success"><i class="fas fa-plus"></i> Ajouter une Tâche</a>
+    <div class="col-auto">
+        <a href="{% url 'task_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Ajouter</a>
     </div>
 </div>
 
 <!-- Filtres -->
-<div class="card mb-4 shadow-sm">
-    <div class="card-body">
-        <form method="GET" action="{% url 'task_list' %}" class="row g-3 align-items-center">
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form method="GET" action="{% url 'task_list' %}" class="row g-2 align-items-center">
             <div class="col-auto">
-                <input type="text" name="recherche" class="form-control" placeholder="Rechercher un titre..." value="{{ request.GET.recherche }}">
+                <input type="text" name="recherche" class="form-control" placeholder="Rechercher..." value="{{ request.GET.recherche }}">
             </div>
             <div class="col-auto">
                 <select name="statut" class="form-select">
@@ -26,8 +26,27 @@
                 </select>
             </div>
             <div class="col-auto">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrer</button>
-                <a href="{% url 'task_list' %}" class="btn btn-secondary">Réinitialiser</a>
+                <select name="date_filtre" class="form-select">
+                    <option value="">Toutes les dates</option>
+                    <option value="depassee" {% if request.GET.date_filtre == 'depassee' %}selected{% endif %}>Date dépassée</option>
+                    <option value="aujourd_hui" {% if request.GET.date_filtre == "aujourd_hui" %}selected{% endif %}>Aujourd'hui</option>
+                    <option value="semaine" {% if request.GET.date_filtre == 'semaine' %}selected{% endif %}>Cette semaine</option>
+                    <option value="mois" {% if request.GET.date_filtre == 'mois' %}selected{% endif %}>Ce mois</option>
+                </select>
+            </div>
+            {% if responsables %}
+            <div class="col-auto">
+                <select name="responsable" class="form-select">
+                    <option value="">Tous les responsables</option>
+                    {% for resp in responsables %}
+                    <option value="{{ resp.id }}" {% if request.GET.responsable == resp.id|stringformat:"d" %}selected{% endif %}>{{ resp.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-auto">
+                <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-search"></i> Filtrer</button>
+                <a href="{% url 'task_list' %}" class="btn btn-outline-secondary btn-sm">Réinitialiser</a>
             </div>
         </form>
     </div>
@@ -36,10 +55,10 @@
 <!-- Liste des tâches -->
 <div class="row">
     {% for task in tasks %}
-    <div class="col-md-4 mb-4">
-        <div class="card h-100 shadow-sm {% if task.is_past_due and task.statut != 'TERMINE' %}border-danger{% elif task.is_near_due and task.statut != 'TERMINE' %}border-warning{% endif %}">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <strong>{{ task.titre }}</strong>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 task-card {% if task.is_past_due and task.statut != 'TERMINE' %}border-danger{% elif task.is_near_due and task.statut != 'TERMINE' %}border-warning{% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-start">
+                <span class="task-title">{{ task.titre }}</span>
                 {% if task.statut == 'A_FAIRE' %}
                     <span class="badge bg-secondary">À faire</span>
                 {% elif task.statut == 'EN_COURS' %}
@@ -48,33 +67,34 @@
                     <span class="badge bg-success">Terminé</span>
                 {% endif %}
             </div>
-            <div class="card-body">
-                <p class="card-text text-muted">{{ task.description|truncatewords:15 }}</p>
-                <p class="card-text">
-                    <small>
-                        <i class="fas fa-calendar-alt"></i> Limite: 
+            <div class="card-body pb-2">
+                {% if task.description %}
+                <p class="task-desc mb-2">{{ task.description|truncatewords:15 }}</p>
+                {% endif %}
+                <div class="task-meta d-flex flex-column gap-1">
+                    <span class="{% if task.is_past_due and task.statut != 'TERMINE' %}text-danger fw-bold{% elif task.is_near_due and task.statut != 'TERMINE' %}text-warning fw-bold{% endif %}">
+                        <i class="far fa-calendar"></i>
                         {% if task.date_limite %}
-                            <span class="{% if task.is_past_due and task.statut != 'TERMINE' %}text-danger fw-bold{% elif task.is_near_due and task.statut != 'TERMINE' %}text-warning fw-bold{% endif %}">
-                                {{ task.date_limite|date:"d/m/Y H:i" }}
-                            </span>
+                            {{ task.date_limite|date:"d/m/Y H:i" }}
                         {% else %}
-                            Aucune
+                            Pas de limite
                         {% endif %}
-                    </small><br>
-                    <small><i class="fas fa-user"></i> {{ task.responsable.username }}</small><br>
-                    <small><i class="fas fa-tag"></i> {{ task.categorie.nom|default:"Sans catégorie" }}</small>
-                </p>
+                    </span>
+                    <span><i class="far fa-user"></i> {{ task.responsable.username }}</span>
+                    <span><i class="far fa-bookmark"></i> {{ task.categorie.nom|default:"Sans catégorie" }}</span>
+                </div>
             </div>
-            <div class="card-footer bg-white border-top-0 d-flex justify-content-between">
-                <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i> Modifier</a>
-                <a href="{% url 'task_delete' task.pk %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>
+            <div class="card-footer task-actions d-flex gap-2 bg-transparent">
+                <a href="{% url 'task_update' task.pk %}" class="btn btn-sm"><i class="fas fa-pen"></i> Modifier</a>
+                <a href="{% url 'task_delete' task.pk %}" class="btn btn-sm btn-del"><i class="fas fa-trash"></i></a>
             </div>
         </div>
     </div>
     {% empty %}
     <div class="col-12">
-        <div class="alert alert-info" role="alert">
-            Aucune tâche trouvée.
+        <div class="empty-state">
+            <i class="far fa-clipboard"></i>
+            <p>Aucune tâche trouvée. Commencez par en créer une !</p>
         </div>
     </div>
     {% endfor %}

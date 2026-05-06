@@ -2,16 +2,14 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-8 col-lg-6">
         <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h3 class="card-title mb-0">
-                    {% if form.instance.pk %}
-                    <i class="fas fa-edit"></i> Modifier la Tâche
-                    {% else %}
-                    <i class="fas fa-plus-circle"></i> Nouvelle Tâche
-                    {% endif %}
-                </h3>
+            <div class="card-header">
+                {% if form.instance.pk %}
+                    <i class="fas fa-pen"></i> Modifier la tâche
+                {% else %}
+                    <i class="fas fa-plus"></i> Nouvelle tâche
+                {% endif %}
             </div>
             <div class="card-body">
                 <form method="POST">
@@ -21,18 +19,15 @@
                     <div class="mb-3">
                         <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
                         {{ field.errors }}
-                        <!-- Utilisation des classes Bootstrap pour les champs générés par Django -->
+
                         {% if field.name == 'description' %}
                         <textarea name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control"
-                            rows="4">{{ field.value|default_if_none:'' }}</textarea>
+                            rows="4" placeholder="Décrivez votre tâche...">{{ field.value|default_if_none:'' }}</textarea>
                         {% else %}
-                        <!-- Il est souvent préférable d'utiliser django-crispy-forms, mais pour la simplicité, 
-                                 nous ajoutons la classe via un petit hack ou nous nous fions au rendu de base, 
-                                 ou utilisons simplement field.as_widget. Ici nous affichons le champ natif -->
+                        <!-- Utilisation des classes Bootstrap pour les champs générés par Django -->
                         <div class="form-control-wrapper">
                             {{ field }}
                         </div>
-
                         {% endif %}
 
                         {% if field.help_text %}
@@ -41,10 +36,10 @@
                     </div>
                     {% endfor %}
 
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                        <a href="{% url 'task_list' %}" class="btn btn-secondary me-md-2">Annuler</a>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-save"></i> Enregistrer
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Enregistrer
                         </button>
                     </div>
                 </form>

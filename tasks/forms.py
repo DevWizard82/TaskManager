@@ -10,6 +10,13 @@ class TaskForm(ModelForm):
             'date_limite': forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}),
         }
 
+    def __init__(self, *args, is_admin=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Les utilisateurs normaux ne voient pas le champ responsable
+        # (il sera auto-assigné dans la vue)
+        if not is_admin:
+            self.fields.pop('responsable')
+
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
