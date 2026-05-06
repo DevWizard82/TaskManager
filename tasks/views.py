@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.http import HttpResponseForbidden
+from django.core.mail import send_mail
+from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from .models import Task
@@ -38,14 +41,15 @@ def task_list(request):
     if request.user.is_superuser and responsable_id:
         tasks = tasks.filter(responsable_id=responsable_id)
 
+    # Tri par date limite (conforme au diagramme SD3)
+    tasks = tasks.order_by('date_limite')
+
     # Indicateurs visuels
     for task in tasks:
-        task.is_past_due = False
+        task.is_past_due = task.is_overdue()
         task.is_near_due = False
-        if task.date_limite:
-            if task.date_limite < now:
-                task.is_past_due = True
-            elif (task.date_limite - now).days <= 2:
+        if task.date_limite and not task.is_past_due and task.statut != 'TERMINE':
+            if (task.date_limite - now).days <= 2:
                 task.is_near_due = True
 
     # Liste des responsables pour le filtre (admin)
@@ -78,11 +82,27 @@ def task_update(request, pk):
     if task.responsable != request.user and not request.user.is_superuser:
         return redirect('task_list')
 
+    ancien_responsable = task.responsable
     is_admin = request.user.is_superuser
     if request.method == 'POST':
         form = TaskForm(request.POST, instance=task, is_admin=is_admin)
         if form.is_valid():
-            form.save()
+            task = form.save()
+            # Notification par email si le responsable a changé (SD4)
+            if is_admin and task.responsable != ancien_responsable and task.responsable.email:
+                try:
+                    send_mail(
+                        subject='Tâche assignée — TaskMaster',
+                        message=f'Bonjour {task.responsable.username},\n\n'
+                                f'La tâche "{task.titre}" vous a été assignée.\n'
+                                f'Date limite : {task.date_limite or "Non définie"}\n\n'
+                                f'— TaskMaster',
+                        from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@taskmaster.local',
+                        recipient_list=[task.responsable.email],
+                        fail_silently=True,
+                    )
+                except Exception:
+                    pass  # Ne pas bloquer si l'envoi échoue
             return redirect('task_list')
     else:
         form = TaskForm(instance=task, is_admin=is_admin)
@@ -98,6 +118,24 @@ def task_delete(request, pk):
         task.delete()
         return redirect('task_list')
     return render(request, 'tasks/task_confirm_delete.html', {'task': task})
+
+
+# ── Changement rapide de statut (SD5) ──
+@login_required
+def task_change_statut(request, pk):
+    """Endpoint dédié au changement de statut d'une tâche (POST uniquement)."""
+    task = get_object_or_404(Task, pk=pk)
+
+    # Vérification des permissions (is_owner ou is_admin)
+    if task.responsable != request.user and not request.user.is_superuser:
+        return HttpResponseForbidden("Non autorisé")
+
+    if request.method == 'POST':
+        nouveau_statut = request.POST.get('statut')
+        task.change_statut(nouveau_statut)
+
+    return redirect('task_list')
+
 
 from django.contrib.auth import login
 from .models import ResponsableProfile

@@ -84,9 +84,24 @@
                     <span><i class="far fa-bookmark"></i> {{ task.categorie.nom|default:"Sans catégorie" }}</span>
                 </div>
             </div>
-            <div class="card-footer task-actions d-flex gap-2 bg-transparent">
+            <div class="card-footer task-actions d-flex gap-2 bg-transparent align-items-center flex-wrap">
                 <a href="{% url 'task_update' task.pk %}" class="btn btn-sm"><i class="fas fa-pen"></i> Modifier</a>
                 <a href="{% url 'task_delete' task.pk %}" class="btn btn-sm btn-del"><i class="fas fa-trash"></i></a>
+                <!-- Changement rapide de statut (SD5) -->
+                {% if task.statut != 'TERMINE' %}
+                <form method="POST" action="{% url 'task_change_statut' task.pk %}" class="d-inline ms-auto">
+                    {% csrf_token %}
+                    {% if task.statut == 'A_FAIRE' %}
+                    <button type="submit" name="statut" value="EN_COURS" class="btn btn-sm btn-outline-primary" title="Passer en cours">
+                        <i class="fas fa-play"></i> En cours
+                    </button>
+                    {% elif task.statut == 'EN_COURS' %}
+                    <button type="submit" name="statut" value="TERMINE" class="btn btn-sm btn-outline-success" title="Marquer terminé">
+                        <i class="fas fa-check"></i> Terminer
+                    </button>
+                    {% endif %}
+                </form>
+                {% endif %}
             </div>
         </div>
     </div>

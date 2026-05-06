@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class ResponsableProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -27,6 +28,7 @@ class Task(models.Model):
     titre = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     date_limite = models.DateTimeField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='A_FAIRE')
     
     categorie = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
@@ -35,3 +37,17 @@ class Task(models.Model):
 
     def __str__(self):
         return self.titre
+
+    def is_overdue(self):
+        """Vérifie si la tâche est en retard (date limite dépassée)."""
+        if self.date_limite and self.statut != 'TERMINE':
+            return self.date_limite < timezone.now()
+        return False
+
+    def change_statut(self, nouveau_statut):
+        """Change le statut de la tâche."""
+        if nouveau_statut in dict(self.STATUT_CHOICES):
+            self.statut = nouveau_statut
+            self.save()
+            return True
+        return False

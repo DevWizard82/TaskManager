@@ -51,10 +51,11 @@ class CategoryAdmin(admin.ModelAdmin):
 # ── Admin Tâche ──
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ('titre', 'responsable', 'statut', 'date_limite', 'categorie')
+    list_display = ('titre', 'responsable', 'statut', 'date_limite', 'date_creation', 'categorie')
     list_filter = ('statut', 'responsable', 'categorie', 'date_limite')
     search_fields = ('titre', 'description')
     list_editable = ('statut',)
+    readonly_fields = ('date_creation',)
     list_per_page = 25
     date_hierarchy = 'date_limite'
     ordering = ('-date_limite',)
