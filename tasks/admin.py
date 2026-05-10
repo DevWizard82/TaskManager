@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from .models import Category, Task, ResponsableProfile
 
 
-# ── Inline pour afficher le profil dans l'admin User ──
 class ResponsableProfileInline(admin.StackedInline):
     model = ResponsableProfile
     can_delete = False
@@ -12,7 +11,6 @@ class ResponsableProfileInline(admin.StackedInline):
     fk_name = 'user'
 
 
-# ── Personnalisation de l'admin User ──
 class CustomUserAdmin(BaseUserAdmin):
     inlines = (ResponsableProfileInline,)
     list_display = ('username', 'first_name', 'last_name', 'email', 'is_staff', 'is_active', 'get_service')
@@ -27,12 +25,10 @@ class CustomUserAdmin(BaseUserAdmin):
     get_service.short_description = 'Service'
 
 
-# Remplacer l'admin User par défaut
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 
 
-# ── Admin Responsable Profile (aussi accessible directement) ──
 @admin.register(ResponsableProfile)
 class ResponsableProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'service')
@@ -40,7 +36,6 @@ class ResponsableProfileAdmin(admin.ModelAdmin):
     list_editable = ('service',)
 
 
-# ── Admin Catégorie ──
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('nom', 'couleur')
@@ -48,7 +43,6 @@ class CategoryAdmin(admin.ModelAdmin):
     list_editable = ('couleur',)
 
 
-# ── Admin Tâche ──
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     list_display = ('titre', 'responsable', 'statut', 'date_limite', 'date_creation', 'categorie')
@@ -61,7 +55,6 @@ class TaskAdmin(admin.ModelAdmin):
     ordering = ('-date_limite',)
 
 
-# ── Personnalisation du site admin ──
 admin.site.site_header = 'TaskMaster — Administration'
 admin.site.site_title = 'TaskMaster Admin'
 admin.site.index_title = 'Gestion des données'

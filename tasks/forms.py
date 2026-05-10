@@ -1,6 +1,8 @@
 from django.forms import ModelForm
 from .models import Task
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
 class TaskForm(ModelForm):
     class Meta:
@@ -12,13 +14,9 @@ class TaskForm(ModelForm):
 
     def __init__(self, *args, is_admin=False, **kwargs):
         super().__init__(*args, **kwargs)
-        # Les utilisateurs normaux ne voient pas le champ responsable
-        # (il sera auto-assigné dans la vue)
         if not is_admin:
             self.fields.pop('responsable')
 
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
 
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True, label='Prénom')

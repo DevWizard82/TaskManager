@@ -8,6 +8,9 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import Task
 from .forms import TaskForm
+from django.contrib.auth import login
+from .models import ResponsableProfile
+from .forms import CustomUserCreationForm
 
 @login_required
 def task_list(request):
@@ -26,7 +29,6 @@ def task_list(request):
     if recherche:
         tasks = tasks.filter(titre__icontains=recherche)
 
-    # Filtre par date limite
     now = timezone.now()
     if date_filtre == 'depassee':
         tasks = tasks.filter(date_limite__lt=now)
@@ -37,14 +39,11 @@ def task_list(request):
     elif date_filtre == 'mois':
         tasks = tasks.filter(date_limite__lte=now + timedelta(days=30), date_limite__gte=now)
 
-    # Filtre par responsable (admin seulement)
     if request.user.is_superuser and responsable_id:
         tasks = tasks.filter(responsable_id=responsable_id)
 
-    # Tri par date limite (conforme au diagramme SD3)
     tasks = tasks.order_by('date_limite')
 
-    # Indicateurs visuels
     for task in tasks:
         task.is_past_due = task.is_overdue()
         task.is_near_due = False
@@ -52,7 +51,6 @@ def task_list(request):
             if (task.date_limite - now).days <= 2:
                 task.is_near_due = True
 
-    # Liste des responsables pour le filtre (admin)
     responsables = User.objects.all() if request.user.is_superuser else None
 
     return render(request, 'tasks/task_list.html', {
@@ -67,7 +65,6 @@ def task_create(request):
         form = TaskForm(request.POST, is_admin=is_admin)
         if form.is_valid():
             task = form.save(commit=False)
-            # Les utilisateurs normaux ne peuvent créer que pour eux-mêmes
             if not is_admin:
                 task.responsable = request.user
             task.save()
@@ -88,7 +85,6 @@ def task_update(request, pk):
         form = TaskForm(request.POST, instance=task, is_admin=is_admin)
         if form.is_valid():
             task = form.save()
-            # Notification par email si le responsable a changé (SD4)
             if is_admin and task.responsable != ancien_responsable and task.responsable.email:
                 try:
                     send_mail(
@@ -102,7 +98,7 @@ def task_update(request, pk):
                         fail_silently=True,
                     )
                 except Exception:
-                    pass  # Ne pas bloquer si l'envoi échoue
+                    pass 
             return redirect('task_list')
     else:
         form = TaskForm(instance=task, is_admin=is_admin)
@@ -120,13 +116,11 @@ def task_delete(request, pk):
     return render(request, 'tasks/task_confirm_delete.html', {'task': task})
 
 
-# ── Changement rapide de statut (SD5) ──
 @login_required
 def task_change_statut(request, pk):
     """Endpoint dédié au changement de statut d'une tâche (POST uniquement)."""
     task = get_object_or_404(Task, pk=pk)
 
-    # Vérification des permissions (is_owner ou is_admin)
     if task.responsable != request.user and not request.user.is_superuser:
         return HttpResponseForbidden("Non autorisé")
 
@@ -136,10 +130,6 @@ def task_change_statut(request, pk):
 
     return redirect('task_list')
 
-
-from django.contrib.auth import login
-from .models import ResponsableProfile
-from .forms import CustomUserCreationForm
 
 def register(request):
     if request.method == 'POST':

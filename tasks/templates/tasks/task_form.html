@@ -6,9 +6,9 @@
         <div class="card shadow-sm">
             <div class="card-header">
                 {% if form.instance.pk %}
-                    <i class="fas fa-pen"></i> Modifier la tâche
+                <i class="fas fa-pen"></i> Modifier la tâche
                 {% else %}
-                    <i class="fas fa-plus"></i> Nouvelle tâche
+                <i class="fas fa-plus"></i> Nouvelle tâche
                 {% endif %}
             </div>
             <div class="card-body">
@@ -21,8 +21,8 @@
                         {{ field.errors }}
 
                         {% if field.name == 'description' %}
-                        <textarea name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control"
-                            rows="4" placeholder="Décrivez votre tâche...">{{ field.value|default_if_none:'' }}</textarea>
+                        <textarea name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" rows="4"
+                            placeholder="Décrivez votre tâche...">{{ field.value|default_if_none:'' }}</textarea>
                         {% else %}
                         <!-- Utilisation des classes Bootstrap pour les champs générés par Django -->
                         <div class="form-control-wrapper">
